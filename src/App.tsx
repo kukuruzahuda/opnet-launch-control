@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useWalletConnect } from '@btc-vision/walletconnect';
 import {
+  BookOpen,
   CirclePause,
   Copy,
   ExternalLink,
+  Flag,
   Layers3,
   Play,
+  ShieldCheck,
   Sparkles,
   Target,
+  Users,
   Wallet,
   WandSparkles,
 } from 'lucide-react';
@@ -36,6 +40,24 @@ const stageNotes: Record<Stage, string> = {
   distribution: 'Shape who gets in, how vesting behaves, and where MOTO unlocks privilege.',
   'go-live': 'Final pass: publish, monitor campaign state, and react if execution drifts.',
 };
+
+const PLAYBOOK = [
+  {
+    title: 'Shape the raise',
+    body: 'Fix the PIL commitment floor, raise target, and vesting spine before the campaign touches wallets.',
+    icon: Flag,
+  },
+  {
+    title: 'Gate the windows',
+    body: 'Decide where MOTO holders get preferential access and how much room stays public for price discovery.',
+    icon: Users,
+  },
+  {
+    title: 'Operate the live lane',
+    body: 'Keep publish, pause, and contract overrides ready so the launch can react without breaking trust.',
+    icon: ShieldCheck,
+  },
+] as const;
 
 function isLikelyContract(value: string): boolean {
   return /^opt1[a-z0-9]{10,}$/.test(value) || /^tb1[a-z0-9]{10,}$/i.test(value);
@@ -228,6 +250,20 @@ export default function App() {
     ];
   }, [motoGate, pillCommit, publicKey, raise, walletAddress]);
 
+  const signalTape = useMemo(() => ([
+    { label: 'Priority lane', value: motoGate ? 'MOTO active' : 'Public only' },
+    { label: 'Creator lock', value: `${months}m vesting` },
+    { label: 'Capital floor', value: `${pillCommit}% PIL` },
+    { label: 'Raise frame', value: formatMoney(raise) },
+  ]), [motoGate, months, pillCommit, raise]);
+
+  const readinessRows = useMemo(() => ([
+    { label: 'Contract rail', value: contractAddress ? (isLikelyContract(contractAddress) ? 'ready' : 'invalid') : 'demo' },
+    { label: 'Distribution', value: motoGate ? 'tiered' : 'open' },
+    { label: 'Settlement', value: publicKey ? 'wallet armed' : 'wallet idle' },
+    { label: 'Operator state', value: runtimeStatus },
+  ]), [contractAddress, motoGate, publicKey, runtimeStatus]);
+
   function applyContractAddress() {
     const next = contractInput.trim();
     setContractAddress(next);
@@ -273,6 +309,15 @@ export default function App() {
 
       <main className="studio-main">
         <StageRail stage={stage} onStage={setStage} />
+
+        <section className="signal-tape" aria-label="Launch tape">
+          {signalTape.map((item) => (
+            <article key={item.label}>
+              <span>{item.label}</span>
+              <strong>{item.value}</strong>
+            </article>
+          ))}
+        </section>
 
         <section className="workbench-grid">
           <article className="panel builder-panel">
@@ -409,6 +454,54 @@ export default function App() {
           </article>
         </section>
 
+        <section className="depth-grid">
+          <article className="panel playbook-panel">
+            <header>
+              <p className="eyebrow">Launch Playbook</p>
+              <h3>How this campaign stays credible</h3>
+            </header>
+            <div className="playbook-list">
+              {PLAYBOOK.map((item) => (
+                <article key={item.title}>
+                  <div className="playbook-icon">
+                    <item.icon size={16} />
+                  </div>
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.body}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </article>
+
+          <article className="panel readiness-panel">
+            <header>
+              <p className="eyebrow">Readiness Board</p>
+              <h3>Launch posture and trust rails</h3>
+            </header>
+            <div className="readiness-grid">
+              {readinessRows.map((item) => (
+                <article key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </article>
+              ))}
+            </div>
+            <div className="mode-rail">
+              {launchModes.map((mode) => (
+                <article key={mode.id}>
+                  <div>
+                    <strong>{mode.label}</strong>
+                    <span>{mode.desc}</span>
+                  </div>
+                  <b>{mode.share}%</b>
+                </article>
+              ))}
+            </div>
+          </article>
+        </section>
+
         <section className="panel contract-panel">
           <header>
             <p className="eyebrow">Contract Source</p>
@@ -439,6 +532,29 @@ export default function App() {
           </p>
           {notice && <p className={`notice ${notice.tone}`}>{notice.text}</p>}
         </section>
+
+        <footer className="studio-footer">
+          <div className="footer-cta">
+            <div>
+              <p className="eyebrow">Launch Operating Layer</p>
+              <h2>Build, stage, then publish with a readable trust model.</h2>
+            </div>
+            <div className="footer-actions">
+              <button type="button" className="primary" onClick={() => simulateAction('publish')}>
+                <Play size={15} />
+                Re-run publish preview
+              </button>
+              <a className="secondary" href="https://docs.opnet.org" target="_blank" rel="noreferrer">
+                <BookOpen size={15} />
+                OPNet docs
+              </a>
+            </div>
+          </div>
+          <div className="footer-meta">
+            <span>Launches should show economics, policy and operator readiness, not just a hero and a button.</span>
+            <span>PIL drives demand pressure. MOTO defines privileged entry windows.</span>
+          </div>
+        </footer>
       </main>
     </div>
   );
